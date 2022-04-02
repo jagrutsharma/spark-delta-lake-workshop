@@ -1,7 +1,7 @@
 -- Databricks notebook source
 -- MAGIC %md
 -- MAGIC 
--- MAGIC # The Essentials of Spark SQL
+-- MAGIC # The Fundamentals of Spark SQL
 -- MAGIC 
 -- MAGIC by Jacek Laskowski (jacek@japila.pl)
 
@@ -11,9 +11,9 @@
 -- MAGIC 
 -- MAGIC ## Welcome
 -- MAGIC 
--- MAGIC This is the first module (out of 4) to teach you how to use and think like a Spark SQL and Delta Lake pro.
+-- MAGIC This is the first module to teach you how to use and think like a Spark SQL and Delta Lake pro.
 -- MAGIC 
--- MAGIC 1 module takes 1,5h (2 x 45 mins)
+-- MAGIC 1 module takes 50 mins
 
 -- COMMAND ----------
 
@@ -21,32 +21,23 @@
 -- MAGIC 
 -- MAGIC ## Schedule
 -- MAGIC 
--- MAGIC ### Module 1. The Essentials of Spark SQL (this notebook)
+-- MAGIC ### Module 1. The Fundamentals of Apache Spark (this notebook)
 -- MAGIC 
--- MAGIC * Part 1
--- MAGIC   * Databricks Platform
--- MAGIC   * Loading and Saving Datasets
--- MAGIC * Part 2
--- MAGIC   * Basic Transformations
--- MAGIC   * Web UI
+-- MAGIC * Introduction to Databricks Community Edition (DBCE)
+-- MAGIC * Loading and Saving Datasets (/databricks-datasets) (SQL)
+-- MAGIC * Basic DataFrame Transformations (SQL)
+-- MAGIC * Working with Spark tables (SQL)
 -- MAGIC   
 -- MAGIC ### Module 2. Intermediate Spark SQL
 -- MAGIC 
--- MAGIC * Part 1
--- MAGIC   * Aggregations and Joins
--- MAGIC * Part 2
--- MAGIC   * Data Sources
--- MAGIC   * Loading Datasets from Cloud Storage
+-- MAGIC * Aggregations (SQL)
+-- MAGIC * Joins (SQL)
+-- MAGIC * Basics of web UI
 -- MAGIC 
 -- MAGIC ### Module 3. Advanced Spark SQL
 -- MAGIC 
--- MAGIC * Part 1
--- MAGIC   * Windowed Aggregation
--- MAGIC * Part 2
--- MAGIC   * Caching and Persistence
--- MAGIC   * The Internals of Structured Query Execution
--- MAGIC 
--- MAGIC ### Module 4. Delta Lake
+-- MAGIC * Windowed Aggregation (SQL)
+-- MAGIC * Introduction to Spark Structured Streaming (Python, SQL)
 
 -- COMMAND ----------
 
@@ -84,6 +75,10 @@
 -- MAGIC %md
 -- MAGIC 
 -- MAGIC ## Why Spark SQL
+
+-- COMMAND ----------
+
+-- MAGIC %md
 -- MAGIC 
 -- MAGIC 1. Apache Spark's module for structured data processing
 -- MAGIC     * Working with structured data (of different format and storage)
@@ -123,15 +118,23 @@
 
 -- COMMAND ----------
 
+-- MAGIC %md
+-- MAGIC 
+-- MAGIC ## Break
+-- MAGIC 
+-- MAGIC A 10-minute break starts NOW :)
+
+-- COMMAND ----------
+
 -- MAGIC %python
 -- MAGIC 
 -- MAGIC display(dbutils.fs.ls('/databricks-datasets'))
 
 -- COMMAND ----------
 
--- MAGIC %fs
+-- MAGIC %python
 -- MAGIC 
--- MAGIC ls /databricks-datasets
+-- MAGIC dbutils.fs.help()
 
 -- COMMAND ----------
 
@@ -139,8 +142,109 @@
 -- MAGIC 
 -- MAGIC ## Loading and Saving Datasets
 -- MAGIC 
+-- MAGIC 1. [Introduction to Apache Spark](https://docs.databricks.com/getting-started/spark/index.html)
 -- MAGIC 1. [Spark SQL, DataFrames and Datasets Guide](https://spark.apache.org/docs/latest/sql-programming-guide.html)
 -- MAGIC 1. [PySpark Documentation](https://spark.apache.org/docs/latest/api/python/index.html)
+-- MAGIC 1. [SQL Reference](https://spark.apache.org/docs/latest/sql-ref.html)
+
+-- COMMAND ----------
+
+-- MAGIC %fs
+-- MAGIC 
+-- MAGIC ls dbfs:/databricks-datasets/bikeSharing/
+
+-- COMMAND ----------
+
+SELECT * FROM text.`dbfs:/databricks-datasets/bikeSharing/README.md`
+
+-- COMMAND ----------
+
+-- MAGIC %fs
+-- MAGIC 
+-- MAGIC ls dbfs:/databricks-datasets/bikeSharing/data-001/
+
+-- COMMAND ----------
+
+-- FIXME Find a way to specify OPTION
+-- SELECT * FROM csv.`dbfs:/databricks-datasets/bikeSharing/data-001/day.csv`
+-- OPTION (header=true)
+
+-- COMMAND ----------
+
+-- MAGIC %scala
+-- MAGIC 
+-- MAGIC val q = spark.read.format("csv").option("header", true).load("dbfs:/databricks-datasets/bikeSharing/data-001/day.csv")
+
+-- COMMAND ----------
+
+-- MAGIC %scala
+-- MAGIC 
+-- MAGIC val q = spark
+-- MAGIC   .read
+-- MAGIC   .format("csv")
+-- MAGIC   .option("header", true)
+-- MAGIC   .option("inferSchema", true)
+-- MAGIC   .load("dbfs:/databricks-datasets/bikeSharing/data-001/day.csv")
+
+-- COMMAND ----------
+
+-- MAGIC %scala
+-- MAGIC 
+-- MAGIC val q = spark
+-- MAGIC   .read
+-- MAGIC   .format("csv")
+-- MAGIC   .option("header", true)
+-- MAGIC   .option("inferSchema", true)
+-- MAGIC   // .schema(???) // <-- a way to specify the expected schema
+-- MAGIC   .load("dbfs:/databricks-datasets/bikeSharing/data-001/day.csv")
+
+-- COMMAND ----------
+
+-- MAGIC %scala
+-- MAGIC 
+-- MAGIC display(q)
+
+-- COMMAND ----------
+
+-- MAGIC %scala
+-- MAGIC 
+-- MAGIC q.write.saveAsTable("bike_sharing")
+
+-- COMMAND ----------
+
+SHOW TABLES LIKE 'bike_sharing'
+
+-- COMMAND ----------
+
+SELECT * FROM bike_sharing
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC 
+-- MAGIC spark.table('bike_sharing').display()
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC 
+-- MAGIC spark.table('bike_sharing').describe().display()
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 
+-- MAGIC Where to find more about what's supported in SQL? Ask no more and find the following docs:
+-- MAGIC 
+-- MAGIC 1. https://github.com/apache/spark/blob/master/sql/catalyst/src/main/antlr4/org/apache/spark/sql/catalyst/parser/SqlBaseParser.g4
+-- MAGIC 1. https://spark.apache.org/docs/latest/sql-ref-syntax.html
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC 
+-- MAGIC # You can convert the DF to a pandas DF and use shape
+-- MAGIC spark.table('bike_sharing').toPandas().shape
 
 -- COMMAND ----------
 
@@ -305,4 +409,19 @@ SELECT myUpper(name) FROM VALUES ("hello"), ("world") AS t(name)
 
 -- MAGIC %md
 -- MAGIC 
--- MAGIC ## Web UI
+-- MAGIC ## Working with Spark tables
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 
+-- MAGIC Learning Resources:
+-- MAGIC 
+-- MAGIC 1. [SQL Reference](https://spark.apache.org/docs/latest/sql-ref.html)
+
+-- COMMAND ----------
+
+CREATE TABLE demo_table (
+    id INT,
+    name VARCHAR
+)
